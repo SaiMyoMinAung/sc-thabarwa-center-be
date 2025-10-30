@@ -100,7 +100,7 @@ const route = (server) => {
                 date: { $gte: start, $lt: end }
             }).sort({ date: 1 }).lean();
 
-            if (!events || events.length === 0) return res.send(200, []);
+            if (!events || events.length === 0) return res.send(200, formatEvents);
 
             // determine all event types present in the month (keeps consistent order)
             // const eventTypes = Array.from(new Set(events.map(e => e.event_for))).sort();
