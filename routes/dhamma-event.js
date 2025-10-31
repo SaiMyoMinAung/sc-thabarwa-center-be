@@ -4,6 +4,9 @@ import { DhammaEventCollection, DhammaEventResource } from '../resource/DhammaEv
 import applyPaginate from '../utils/applyPaginate.js'
 import applyThisMonthQuery from '../utils/applyThisMonthQuery.js'
 import getDatesInRange from '../utils/getDatesInRange.js'
+import { convertMonthIndexToMonthString } from '../utils/convertMonthIndexToMonthString.js'
+import rjwt from 'restify-jwt-community';
+import config from '../config.js'
 
 const route = (server) => {
     server.get('/api/get-calendar-data-detail/:date', async (req, res) => {
@@ -97,15 +100,11 @@ const route = (server) => {
 
             // fetch events in the month
             const events = await DhammaEventModel.find({
-                date: { $gte: start, $lt: end }
+                date: { $gte: start, $lt: end },
+                confirm: 1
             }).sort({ date: 1 }).lean();
 
             if (!events || events.length === 0) return res.send(200, formatEvents);
-
-            // determine all event types present in the month (keeps consistent order)
-            // const eventTypes = Array.from(new Set(events.map(e => e.event_for))).sort();
-
-            // console.log('eventTypes',eventTypes)
 
             events.forEach(e => {
                 const dateKey = new Date(e.date).toISOString().slice(0, 10); // "YYYY-MM-DD"
@@ -128,32 +127,65 @@ const route = (server) => {
         }
     });
 
-    server.get('/api/get-donation-event', async (req, res) => {
-        try {
-            let filter = {};
+    server.get('/api/get-donation-event',
+        rjwt({ secret: config.JWT_SECRET }),
+        async (req, res) => {
+            try {
+                let filter = {};
 
-            const { year, month } = req.query || {};
-            console.log(year)
-            const dateFilter = applyThisMonthQuery(year, month);
+                var year = req.query.year;
+                var month = req.query.month;
 
-            if (dateFilter !== null) {
-                filter.date = dateFilter;
+                if (!year || !month) {
+                    const date = new Date();
+                    year = date.getFullYear();
+                    month = convertMonthIndexToMonthString(date.getMonth());
+                }
+
+                const dateFilter = applyThisMonthQuery(year, month);
+
+                if (dateFilter !== null) {
+                    filter.date = dateFilter;
+                }
+                console.log(filter)
+
+                const query = DhammaEventModel.find(filter).sort({ date: -1 });
+
+                const baseQuery = DhammaEventModel;
+
+                const [data, meta] = await applyPaginate(baseQuery, query, req);
+
+                res.send(200, DhammaEventCollection(data, meta));
+
+            } catch (error) {
+                console.log(error)
             }
-            console.log(filter)
 
-            const query = DhammaEventModel.find(filter).sort({ date: -1 });
+        })
 
-            const baseQuery = DhammaEventModel;
+    server.put('/api/confirm-donation-event/:id', async (req, res) => {
+        try {
+            const { id } = req.params || {};
+            const { confirm } = req.body || {};
 
-            const [data, meta] = await applyPaginate(baseQuery, query, req);
+            if (!id) {
+                return res.send(400, { message: 'please fill id' });
+            }
 
-            res.send(200, DhammaEventCollection(data, meta));
+            const eventFind = await DhammaEventModel.findById(id);
 
-        } catch (error) {
-            console.log(error)
+            if (!eventFind) {
+                return res.send(404, new errors.NotFoundError('dhamma not found event'));
+            }
+
+            const event = await DhammaEventModel.findOneAndUpdate({ _id: req.params.id }, { confirm: confirm });
+
+            return res.send(200, DhammaEventResource(event));
+        } catch (err) {
+            console.error(err);
+            return res.send(500, { message: 'Server error' });
         }
-
-    })
+    });
 
     server.post('/api/save-donation-event', async (req, res) => {
         try {

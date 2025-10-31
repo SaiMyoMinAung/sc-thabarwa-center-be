@@ -25,7 +25,6 @@ server.pre((req, res, next) => {
 server.use(restify.plugins.bodyParser());
 server.use(restify.plugins.queryParser());
 
-
 const clientOptions = { serverApi: { version: '1', strict: true, deprecationErrors: true } };
 
 const port = config.PORT || 4000;
@@ -51,9 +50,18 @@ const db = mongoose.connection;
 db.on('error', (err) => console.log('db.on error', err))
 
 db.once('open', () => {
-    // require('./routes/customers.js')(server);
+    import('./routes/manager.js')
+        .then((mod) => {
+            console.log('connected manager')
+            const route = mod.default || mod;
+            if (typeof route === 'function') route(server);
+            else console.error('Unexpected export from ./routes/manager.js', route);
+        })
+        .catch((err) => console.error('Failed to load routes:', err));
+
     import('./routes/dhamma-event.js')
         .then((mod) => {
+            console.log('connected dhamma-event')
             const route = mod.default || mod;
             if (typeof route === 'function') route(server);
             else console.error('Unexpected export from ./routes/dhamma-event.js', route);
