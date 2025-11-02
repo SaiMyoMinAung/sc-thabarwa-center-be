@@ -50,6 +50,15 @@ const db = mongoose.connection;
 db.on('error', (err) => console.log('db.on error', err))
 
 db.once('open', () => {
+    import('./routes/announcement.js')
+        .then((mod) => {
+            console.log('connected announcement')
+            const route = mod.default || mod;
+            if (typeof route === 'function') route(server);
+            else console.error('Unexpected export from ./routes/manager.js', route);
+        })
+        .catch((err) => console.error('Failed to load routes:', err));
+
     import('./routes/manager.js')
         .then((mod) => {
             console.log('connected manager')

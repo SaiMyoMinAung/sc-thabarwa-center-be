@@ -17,7 +17,8 @@ const route = (server) => {
 
             // fetch events in the date
             const events = await DhammaEventModel.find({
-                date
+                date,
+                confirm: 1
             }).sort({ date: 1 }).lean();
 
             if (!events || events.length === 0) return res.send(200, []);
@@ -132,9 +133,11 @@ const route = (server) => {
         async (req, res) => {
             try {
                 let filter = {};
-
+                console.log(req.query)
                 var year = req.query.year;
                 var month = req.query.month;
+                console.log('year here',year)
+                console.log('month here',month)
 
                 if (!year || !month) {
                     const date = new Date();
@@ -163,29 +166,31 @@ const route = (server) => {
 
         })
 
-    server.put('/api/confirm-donation-event/:id', async (req, res) => {
-        try {
-            const { id } = req.params || {};
-            const { confirm } = req.body || {};
+    server.put('/api/confirm-donation-event/:id',
+        rjwt({ secret: config.JWT_SECRET }),
+        async (req, res) => {
+            try {
+                const { id } = req.params || {};
+                const { confirm } = req.body || {};
 
-            if (!id) {
-                return res.send(400, { message: 'please fill id' });
+                if (!id) {
+                    return res.send(400, { message: 'please fill id' });
+                }
+
+                const eventFind = await DhammaEventModel.findById(id);
+
+                if (!eventFind) {
+                    return res.send(404, new errors.NotFoundError('dhamma not found event'));
+                }
+
+                const event = await DhammaEventModel.findOneAndUpdate({ _id: req.params.id }, { confirm: confirm });
+
+                return res.send(200, DhammaEventResource(event));
+            } catch (err) {
+                console.error(err);
+                return res.send(500, { message: 'Server error' });
             }
-
-            const eventFind = await DhammaEventModel.findById(id);
-
-            if (!eventFind) {
-                return res.send(404, new errors.NotFoundError('dhamma not found event'));
-            }
-
-            const event = await DhammaEventModel.findOneAndUpdate({ _id: req.params.id }, { confirm: confirm });
-
-            return res.send(200, DhammaEventResource(event));
-        } catch (err) {
-            console.error(err);
-            return res.send(500, { message: 'Server error' });
-        }
-    });
+        });
 
     server.post('/api/save-donation-event', async (req, res) => {
         try {
