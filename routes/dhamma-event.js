@@ -164,7 +164,7 @@ const route = (server) => {
                 console.log(error)
             }
 
-        })
+        });
 
     server.put('/api/confirm-donation-event/:id',
         rjwt({ secret: config.JWT_SECRET }),

@@ -8,6 +8,10 @@ const AnnouncementSchema = new mongoose.Schema({
     announcement: {
         type: String,
         required: [true, 'Please fill Announcement!']
+    },
+    always_show: {
+        type: Number,
+        default: 0
     }
 }, {
     toJSON: {

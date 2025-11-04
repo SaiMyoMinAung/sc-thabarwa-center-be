@@ -6,14 +6,16 @@ export function AnnounementResource(doc) {
     const o = typeof doc.toJSON === 'function' ? doc.toJSON() : doc;
 
     return {
+        id: o.id,
         date: formatDate(o.date),
-        announcement: o.announcement
+        announcement: o.announcement,
+        always_show: o.always_show ? true : false
     };
 }
 
 export function AnnounementCollection(docs, meta = {}) {
     return {
-        data: docs.map(ManagerResource),
+        data: docs.map(AnnounementResource),
         meta
     };
 }
