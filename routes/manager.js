@@ -18,10 +18,18 @@ export default (server) => {
             } catch (err) {
                 if (err && err.name === 'ValidationError') {
                     const messages = Object.values(err.errors || {}).map(e => e.message);
-                    res.send(400, {
-                        code: 'InvalidContent',
-                        message: messages.join(', ')
-                    });
+
+                    res.status(400);
+
+                    res.setHeader('Content-Type', 'application/json');
+
+                    res.end(JSON.stringify(messages));
+
+                    return;
+                    // res.send(400, {
+                    //     code: 'InvalidContent',
+                    //     message: messages.join(', ')
+                    // });
                 }
                 throw err;
             }
@@ -33,11 +41,25 @@ export default (server) => {
 
             const newManager = await manager.save();
 
-            res.send(201, ManagerResource(newManager));
+            // res.send(201, ManagerResource(newManager));
+            res.status(201);
+
+            res.setHeader('Content-Type', 'application/json');
+
+            res.end(JSON.stringify(ManagerResource(newManager)));
+
+            return;
 
         } catch (err) {
             console.log('error', err);
-            res.send(500, { message: 'Server error' });
+            // res.send(500, { message: 'Server error' });
+            res.status(500);
+
+            res.setHeader('Content-Type', 'application/json');
+
+            res.end(JSON.stringify(error.message));
+
+            return;
 
         }
     });
@@ -45,7 +67,14 @@ export default (server) => {
     server.post('/api/manager-login', async (req, res) => {
 
         if (!(req.body?.email) || !(req.body?.password)) {
-            throw new errors.InvalidContentError(`Please fill email and password`)
+            // throw new errors.InvalidContentError(`Please fill email and password`)
+            res.status(400);
+
+            res.setHeader('Content-Type', 'application/json');
+
+            res.end(JSON.stringify({ message: `Please fill email and password` }));
+
+            return;
         }
 
         const { email, password } = req.body;

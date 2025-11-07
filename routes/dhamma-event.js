@@ -13,7 +13,14 @@ const route = (server) => {
         try {
             const { date } = req.params || {};
 
-            if (!date) return res.send(400, { message: 'date required' });
+            if (!date) {
+                // return res.send(400, { message: 'date required' });
+                res.status(400);
+
+                res.setHeader('Content-Type', 'application/json');
+
+                res.end(JSON.stringify({ message: 'date required' }));
+            }
 
             // fetch events in the date
             const events = await DhammaEventModel.find({
@@ -21,7 +28,17 @@ const route = (server) => {
                 confirm: 1
             }).sort({ date: 1 }).lean();
 
-            if (!events || events.length === 0) return res.send(200, []);
+            if (!events || events.length === 0) {
+                // return res.send(200, []);
+                res.status(200);
+
+                res.setHeader('Content-Type', 'application/json');
+
+                res.end(JSON.stringify([]));
+
+                return;
+
+            }
 
             let breakfast = null;
 
@@ -37,9 +54,29 @@ const route = (server) => {
 
             const formatData = { [date]: { breakfast, lunch } };
 
-            res.send(200, formatData);
+            // res.send(200, formatData);
+            res.status(200);
+
+            res.setHeader('Content-Type', 'application/json');
+
+            res.end(JSON.stringify(formatData));
+
+            return;
         } catch (error) {
             console.log(error)
+
+            res.status(500);
+
+            res.setHeader('Content-Type', 'application/json');
+
+            res.end(JSON.stringify(error.message));
+
+            return;
+
+            // return res.send(500, {
+            //     message: 'Internal server error',
+            //     error: error.message,
+            // });
         }
     });
 
@@ -77,7 +114,16 @@ const route = (server) => {
     server.get('/api/calendar-data/:current_month', async (req, res) => {
         try {
             const { current_month } = req.params || {};
-            if (!current_month) return res.send(400, { message: 'current_month required (format YYYY-MM)' });
+            if (!current_month) {
+                res.status(400);
+
+                res.setHeader('Content-Type', 'application/json');
+
+                res.end(JSON.stringify({ message: 'current_month required (format YYYY-MM)' }));
+
+                return;
+                // return res.send(400, { message: 'current_month required (format YYYY-MM)' });
+            }
 
             // accept "YYYY-MM" or "YYYY-M"
             const parts = current_month.split('-');
@@ -85,7 +131,14 @@ const route = (server) => {
             const month = Number(parts[1]) - 1; // zero-based
 
             if (Number.isNaN(year) || Number.isNaN(month)) {
-                return res.send(400, { message: 'current_month must be in format YYYY-MM' });
+                res.status(400);
+
+                res.setHeader('Content-Type', 'application/json');
+
+                res.end(JSON.stringify({ message: 'current_month must be in format YYYY-MM' }));
+
+                return
+                // return res.send(400, { message: 'current_month must be in format YYYY-MM' });
             }
 
             const start = new Date(year, month, 1);
@@ -105,7 +158,16 @@ const route = (server) => {
                 confirm: 1
             }).sort({ date: 1 }).lean();
 
-            if (!events || events.length === 0) return res.send(200, formatEvents);
+            if (!events || events.length === 0) {
+                // return res.send(200, formatEvents);
+                res.status(200);
+
+                res.setHeader('Content-Type', 'application/json');
+
+                res.end(JSON.stringify(formatEvents));
+
+                return
+            }
 
             events.forEach(e => {
                 const dateKey = new Date(e.date).toISOString().slice(0, 10); // "YYYY-MM-DD"
@@ -121,10 +183,24 @@ const route = (server) => {
             // convert to array of objects sorted by date
             // const result = Object.keys(map).sort().map(dateKey => ({ [dateKey]: map[dateKey] }));
 
-            res.send(200, formatEvents);
+            // res.send(200, formatEvents);
+            res.status(200);
+
+            res.setHeader('Content-Type', 'application/json');
+
+            res.end(JSON.stringify(formatEvents));
+
+            return;
 
         } catch (error) {
             console.log(error)
+            res.status(500);
+
+            res.setHeader('Content-Type', 'application/json');
+
+            res.end(JSON.stringify(error.message));
+
+            return;
         }
     });
 
@@ -136,8 +212,8 @@ const route = (server) => {
                 console.log(req.query)
                 var year = req.query.year;
                 var month = req.query.month;
-                console.log('year here',year)
-                console.log('month here',month)
+                console.log('year here', year)
+                console.log('month here', month)
 
                 if (!year || !month) {
                     const date = new Date();
@@ -158,10 +234,24 @@ const route = (server) => {
 
                 const [data, meta] = await applyPaginate(baseQuery, query, req);
 
-                res.send(200, DhammaEventCollection(data, meta));
+                // res.send(200, DhammaEventCollection(data, meta));
+                res.status(200);
+
+                res.setHeader('Content-Type', 'application/json');
+
+                res.end(JSON.stringify(DhammaEventCollection(data, meta)));
+
+                return;
 
             } catch (error) {
                 console.log(error)
+                res.status(500);
+
+                res.setHeader('Content-Type', 'application/json');
+
+                res.end(JSON.stringify(error.message));
+
+                return;
             }
 
         });
@@ -174,21 +264,49 @@ const route = (server) => {
                 const { confirm } = req.body || {};
 
                 if (!id) {
-                    return res.send(400, { message: 'please fill id' });
+                    // return res.send(400, { message: 'please fill id' });
+                    res.status(400);
+
+                    res.setHeader('Content-Type', 'application/json');
+
+                    res.end(JSON.stringify({ message: 'please fill id' }));
+
+                    return;
                 }
 
                 const eventFind = await DhammaEventModel.findById(id);
 
                 if (!eventFind) {
-                    return res.send(404, new errors.NotFoundError('dhamma not found event'));
+                    // return res.send(404, new errors.NotFoundError('dhamma not found event'));
+                    res.status(404);
+
+                    res.setHeader('Content-Type', 'application/json');
+
+                    res.end(JSON.stringify(new errors.NotFoundError('dhamma not found event')));
+
+                    return;
                 }
 
                 const event = await DhammaEventModel.findOneAndUpdate({ _id: req.params.id }, { confirm: confirm });
 
-                return res.send(200, DhammaEventResource(event));
+                // return res.send(200, DhammaEventResource(event));
+                res.status(200);
+
+                res.setHeader('Content-Type', 'application/json');
+
+                res.end(JSON.stringify(DhammaEventResource(event)));
+
+                return;
             } catch (err) {
                 console.error(err);
-                return res.send(500, { message: 'Server error' });
+                // return res.send(500, { message: 'Server error' });
+                res.status(500);
+
+                res.setHeader('Content-Type', 'application/json');
+
+                res.end(JSON.stringify(error.message));
+
+                return;
             }
         });
 
@@ -200,7 +318,14 @@ const route = (server) => {
 
             const saved = await model.save();
 
-            res.send(201, DhammaEventResource(saved));
+            res.status(201);
+
+            res.setHeader('Content-Type', 'application/json');
+
+            res.end(JSON.stringify(DhammaEventResource(saved)));
+
+            return;
+            // res.send(201, DhammaEventResource(saved));
 
         } catch (err) {
             // custom-format mongoose validation errors to remove the
@@ -209,13 +334,23 @@ const route = (server) => {
 
                 const messages = Object.values(err.errors || {}).map(e => e.message);
 
-                return res.send(400, {
+                res.status(400);
+                res.setHeader('Content-Type', 'application/json');
+                res.end(JSON.stringify({
                     code: 'InvalidContent',
                     message: messages.join(', ')
-                });
+                }));
+
+                return;
             }
 
-            throw new errors.InternalServerError(err);
+            res.status(500);
+
+            res.setHeader('Content-Type', 'application/json');
+
+            res.end(JSON.stringify(err.message));
+
+            return;
         }
     })
 }

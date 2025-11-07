@@ -29,21 +29,36 @@ const clientOptions = { serverApi: { version: '1', strict: true, deprecationErro
 
 const port = config.PORT || 4000;
 console.log(port)
-server.listen(port, () => {
 
-    mongoose.connect(config.MONGODB_URI, clientOptions).then(() => {
-        // mongoose.connection.db is available only after successful connection
-        return mongoose.connection.db.admin().command({ ping: 1 });
-    })
-        .then(() => {
-            console.log("Pinged your deployment. You successfully connected to MongoDB!");
+if (!process.env.VERCEL) {
+    server.listen(port, () => {
+
+        mongoose.connect(config.MONGODB_URI, clientOptions).then(() => {
+            // mongoose.connection.db is available only after successful connection
+            return mongoose.connection.db.admin().command({ ping: 1 });
         })
-        .catch((err) => {
-            console.error('MongoDB connection error:', err);
-        });
+            .then(() => {
+                console.log("Pinged your deployment. You successfully connected to MongoDB!");
+            })
+            .catch((err) => {
+                console.error('MongoDB connection error:', err);
+            });
 
-    console.log("Pinged your deployment. You successfully connected to MongoDB!");
-});
+        console.log("Pinged your deployment. You successfully connected to MongoDB!");
+    });
+}
+
+export default function handler(req, res) {
+    // ensure mongoose connection is warmed on first call
+    if (mongoose.connection.readyState !== 1) {
+        mongoose.connect(config.MONGODB_URI, clientOptions).catch(err => {
+            console.error('Mongo connect failed', err);
+        });
+    }
+
+    // let restify handle the incoming request without calling listen()
+    server.server.emit('request', req, res);
+}
 
 const db = mongoose.connection;
 

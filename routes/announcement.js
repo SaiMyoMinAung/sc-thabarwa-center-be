@@ -18,10 +18,24 @@ const route = (server) => {
 
                 const announcement = await AnnouncementModel.findByIdAndUpdate({ _id: req.params.id }, { always_show: 1 })
 
-                return res.send(200, AnnounementResource(announcement));
+                // return res.send(200, AnnounementResource(announcement));
+                res.status(200);
+
+                res.setHeader('Content-Type', 'application/json');
+
+                res.end(JSON.stringify(AnnounementResource(announcement)));
+
+                return;
             } catch (err) {
 
-                return res.send(500, { message: 'Server error' });
+                res.status(500);
+
+                res.setHeader('Content-Type', 'application/json');
+
+                res.end(JSON.stringify(err.message));
+
+                return;
+                // return res.send(500, { message: 'Server error' });
             }
 
         });
@@ -38,14 +52,28 @@ const route = (server) => {
         }).lean();
 
         if (alwaysShowAnnouncement) {
-            res.send(200, AnnounementResource(alwaysShowAnnouncement))
+            // res.send(200, AnnounementResource(alwaysShowAnnouncement))
+            res.status(200);
+
+            res.setHeader('Content-Type', 'application/json');
+
+            res.end(JSON.stringify(AnnounementResource(alwaysShowAnnouncement)));
+
+            return;
         }
 
         const announcement = await AnnouncementModel.findOne({
             date: todayDate
         }).lean();
 
-        res.send(200, AnnounementResource(announcement))
+        // res.send(200, AnnounementResource(announcement))
+        res.status(200);
+
+        res.setHeader('Content-Type', 'application/json');
+
+        res.end(JSON.stringify(AnnounementResource(announcement)));
+
+        return;
     });
 
     server.get('/api/get-announcement',
@@ -78,10 +106,25 @@ const route = (server) => {
 
                 const [data, meta] = await applyPaginate(baseQuery, query, req);
 
-                res.send(200, AnnounementCollection(data, meta));
+                // res.send(200, AnnounementCollection(data, meta));
+                res.status(200);
+
+                res.setHeader('Content-Type', 'application/json');
+
+                res.end(JSON.stringify(AnnounementCollection(data, meta)));
+
+                return;
 
             } catch (error) {
                 console.log(error)
+
+                res.status(500);
+
+                res.setHeader('Content-Type', 'application/json');
+
+                res.end(JSON.stringify(error.message));
+
+                return;
             }
 
         });
@@ -93,13 +136,27 @@ const route = (server) => {
 
         const saved = await model.save();
 
-        res.send(201, AnnounementResource(saved));
+        // res.send(201, AnnounementResource(saved));
+        res.status(201);
+
+        res.setHeader('Content-Type', 'application/json');
+
+        res.end(JSON.stringify(AnnounementResource(saved)));
+
+        return;
     });
 
     server.get('/api/get-announcement-detail/:id', async (req, res) => {
         const announcement = await AnnouncementModel.findById({ _id: req.params.id });
 
-        res.send(200, AnnounementResource(announcement));
+        // res.send(200, AnnounementResource(announcement));
+        res.status(200);
+
+        res.setHeader('Content-Type', 'application/json');
+
+        res.end(JSON.stringify(AnnounementResource(announcement)));
+
+        return;
     });
 
     server.put('/api/update-announcement/:id', async (req, res) => {
@@ -108,16 +165,30 @@ const route = (server) => {
             announcement: req.body.announcement,
         })
 
-        const updated = await AnnouncementModel.findById({_id: req.params.id})
+        const updated = await AnnouncementModel.findById({ _id: req.params.id })
 
-        res.send(200, AnnounementResource(updated));
+        // res.send(200, AnnounementResource(updated));
+        res.status(200);
+
+        res.setHeader('Content-Type', 'application/json');
+
+        res.end(JSON.stringify(AnnounementResource(updated)));
+
+        return;
     });
 
     server.del('/api/delete-announcement/:id', async (req, res) => {
 
         await AnnouncementModel.findByIdAndDelete({ _id: req.params.id })
 
-        res.send(200, true);
+        // res.send(200, true);
+        res.status(200);
+
+        res.setHeader('Content-Type', 'application/json');
+
+        res.end(true);
+
+        return;
     });
 }
 
